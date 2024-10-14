@@ -1,0 +1,56 @@
+/* Help.css */
+
+.help-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding-top: 5%;
+}
+
+.help-container h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #4CAF50;
+    padding-top: 5%;
+}
+
+.help-section {
+    margin-bottom: 30px;
+}
+
+.help-section h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.help-section p, .help-section ul, .help-section ol {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.help-section ul, .help-section ol {
+    padding-left: 20px;
+}
+
+.help-section a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+.help-section a:hover {
+    text-decoration: underline;
+}
+
+.faq h3 {
+    font-size: 18px;
+    margin-top: 20px;
+    color: #333;
+}
+
+.faq p {
+    font-size: 16px;
+    line-height: 1.6;
+}

@@ -1,0 +1,1 @@
+SELECT * FROM users; to see table
