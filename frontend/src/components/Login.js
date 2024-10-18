@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import './Login.css'; // Import the CSS file for styling
+import './Login.css';
 
-function Login() {
+function Login({ setIsLoggedIn }) { // Accept setIsLoggedIn as a prop
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -23,10 +23,10 @@ function Login() {
             const data = await response.json();
 
             if (response.ok) {
-                localStorage.setItem('userId', data.user_id); // Adjust according to your response structure
+                sessionStorage.setItem('user_id', data.user_id);
+                setIsLoggedIn(true); // Update isLoggedIn here
                 setIsSubmitted(true);
-                // Redirect to the Dashboard after successful login
-                window.location.href = '/dashboard'; // Add this line
+                window.location.href = '/dashboard';
             } else {
                 alert(data.message || 'Login failed. Check your credentials.');
             }

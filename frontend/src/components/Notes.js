@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Notes.css'; // Import the CSS file for styling
 import Editor from './Editor'; // Import the Editor component
 
-const Notes = () => {
+const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
     const [notes, setNotes] = useState([]);
     const [newNote, setNewNote] = useState({
         title: '',
@@ -21,11 +21,17 @@ const Notes = () => {
     // Fetch notes from the backend when the component mounts
     useEffect(() => {
         const fetchNotes = async () => {
+            if (!isLoggedIn) {
+                alert('Please log in to view your notes.');
+                return; // Early exit if not logged in
+            }
+    
             try {
                 const response = await fetch('http://127.0.0.1:5000/notes');
+                if (!response.ok) throw new Error('Unauthorized');
                 const data = await response.json();
-                console.log('Fetched notes:', data); // Check the fetched data
-                
+                console.log('Fetched notes:', data);
+    
                 // Validate that the fetched data is an array
                 if (Array.isArray(data)) {
                     setNotes(data);
@@ -35,12 +41,13 @@ const Notes = () => {
                 }
             } catch (error) {
                 console.error('Error fetching notes:', error);
+                alert('Failed to fetch notes. Please log in or try again later.');
                 setNotes([]); // Ensure notes is an empty array on error
             }
         };
-
+    
         fetchNotes();
-    }, []);
+    }, [isLoggedIn]); // Add isLoggedIn to the dependency array
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -54,55 +61,51 @@ const Notes = () => {
         setSearchQuery(e.target.value);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const apiUrl = 'http://127.0.0.1:5000/notes';
-    
+
         const noteToAdd = {
             ...newNote,
             tags: newNote.tags.split(',').map(tag => tag.trim()), // Trim tags
         };
-    
+
         const method = editMode ? 'PUT' : 'POST';
         const url = editMode ? `${apiUrl}/${noteIdToEdit}` : apiUrl;
-    
-        fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                // Include Authorization header if needed
-                // 'Authorization': `Bearer ${localStorage.getItem('yourAuthToken')}` 
-                // or ensure session is handled correctly
-            },
-            body: JSON.stringify(noteToAdd),
-        })
-            .then(response => {
-                if (!response.ok) {
-                    // Handle specific error messages if provided by the API
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Failed to submit the note');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (editMode) {
-                    // Update note in local state for edit
-                    setNotes(notes.map(note => note.id === noteIdToEdit ? { ...note, ...noteToAdd } : note));
-                    setEditMode(false);
-                    setNoteIdToEdit(null);
-                } else {
-                    // Add new note to local state for new note
-                    setNotes([...notes, { ...noteToAdd, id: data.note.id }]);
-                }
-                setNewNote({ title: '', content: '', tags: '', date: new Date().toISOString().split('T')[0] });
-                setShowForm(false);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Could not submit the note. Please try again later.');
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(noteToAdd),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error response:', errorData); // Log the error response
+                throw new Error(errorData.message || 'Failed to submit the note');
+            }
+
+            const data = await response.json();
+            if (editMode) {
+                // Update note in local state for edit
+                setNotes(notes.map(note => note.id === noteIdToEdit ? { ...note, ...noteToAdd } : note));
+                setEditMode(false);
+                setNoteIdToEdit(null);
+            } else {
+                // Add new note to local state for new note
+                setNotes([...notes, { ...noteToAdd, id: data.note.id }]);
+            }
+            setNewNote({ title: '', content: '', tags: '', date: new Date().toISOString().split('T')[0] });
+            setShowForm(false);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Could not submit the note. Please try again later.');
+        }
     };
+
     const handleEdit = (noteId) => {
         const noteToEdit = notes.find((note) => note.id === noteId);
         setNewNote({
