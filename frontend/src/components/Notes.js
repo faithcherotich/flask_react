@@ -1,32 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Notes.css'; // Import the CSS file for styling
 import Editor from './Editor'; // Import the Editor component
 
 const Notes = () => {
-    const [notes, setNotes] = useState([
-        {
-            id: 1,
-            title: 'First Note',
-            content: 'This is the content of the first note.',
-            tags: ['general', 'introduction'],
-            date: new Date().toISOString().split('T')[0], // Default date format
-        },
-        {
-            id: 2,
-            title: 'Second Note',
-            content: 'This is the content of the second note.',
-            tags: ['update', 'news'],
-            date: new Date().toISOString().split('T')[0], // Default date format
-        },
-    ]);
-
+    const [notes, setNotes] = useState([]);
     const [newNote, setNewNote] = useState({
         title: '',
         content: '',
         tags: '',
         date: new Date().toISOString().split('T')[0], // Default date format
     });
-
     const [searchQuery, setSearchQuery] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [noteIdToEdit, setNoteIdToEdit] = useState(null);
@@ -34,6 +17,30 @@ const Notes = () => {
     const [showForm, setShowForm] = useState(false);
     const [showNotes, setShowNotes] = useState(false);
     const [showEditor, setShowEditor] = useState(false);
+
+    // Fetch notes from the backend when the component mounts
+    useEffect(() => {
+        const fetchNotes = async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/notes');
+                const data = await response.json();
+                console.log('Fetched notes:', data); // Check the fetched data
+                
+                // Validate that the fetched data is an array
+                if (Array.isArray(data)) {
+                    setNotes(data);
+                } else {
+                    console.error('Expected notes to be an array, but got:', data);
+                    setNotes([]); // Fallback to an empty array
+                }
+            } catch (error) {
+                console.error('Error fetching notes:', error);
+                setNotes([]); // Ensure notes is an empty array on error
+            }
+        };
+
+        fetchNotes();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -49,26 +56,53 @@ const Notes = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (editMode) {
-            const updatedNotes = notes.map((note) =>
-                note.id === noteIdToEdit ? { ...note, ...newNote, tags: newNote.tags.split(','), date: newNote.date } : note
-            );
-            setNotes(updatedNotes);
-            setEditMode(false);
-            setNoteIdToEdit(null);
-        } else {
-            const newId = notes.length ? notes[notes.length - 1].id + 1 : 1;
-            const noteToAdd = {
-                id: newId,
-                ...newNote,
-                tags: newNote.tags.split(','),
-            };
-            setNotes([...notes, noteToAdd]);
-        }
-        setNewNote({ title: '', content: '', tags: '', date: new Date().toISOString().split('T')[0] });
-        setShowForm(false); // Hide the form after submitting
+        const apiUrl = 'http://127.0.0.1:5000/notes';
+    
+        const noteToAdd = {
+            ...newNote,
+            tags: newNote.tags.split(',').map(tag => tag.trim()), // Trim tags
+        };
+    
+        const method = editMode ? 'PUT' : 'POST';
+        const url = editMode ? `${apiUrl}/${noteIdToEdit}` : apiUrl;
+    
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                // Include Authorization header if needed
+                // 'Authorization': `Bearer ${localStorage.getItem('yourAuthToken')}` 
+                // or ensure session is handled correctly
+            },
+            body: JSON.stringify(noteToAdd),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // Handle specific error messages if provided by the API
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to submit the note');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (editMode) {
+                    // Update note in local state for edit
+                    setNotes(notes.map(note => note.id === noteIdToEdit ? { ...note, ...noteToAdd } : note));
+                    setEditMode(false);
+                    setNoteIdToEdit(null);
+                } else {
+                    // Add new note to local state for new note
+                    setNotes([...notes, { ...noteToAdd, id: data.note.id }]);
+                }
+                setNewNote({ title: '', content: '', tags: '', date: new Date().toISOString().split('T')[0] });
+                setShowForm(false);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Could not submit the note. Please try again later.');
+            });
     };
-
     const handleEdit = (noteId) => {
         const noteToEdit = notes.find((note) => note.id === noteId);
         setNewNote({
@@ -82,25 +116,25 @@ const Notes = () => {
         setShowForm(true); // Show the form for editing
     };
 
-    
-    const handleDelete = (noteId) => {
+    const handleDelete = async (noteId) => {
         if (window.confirm('Are you sure you want to delete this note?')) {
             const apiUrl = `http://127.0.0.1:5000/notes/${noteId}`;
 
-            fetch(apiUrl, {
-                method: 'DELETE',
-            })
-            .then((response) => {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'DELETE',
+                });
+
                 if (!response.ok) {
                     throw new Error('Failed to delete the note');
                 }
+
                 // Update the frontend state if the backend deletion was successful
                 setNotes(notes.filter((note) => note.id !== noteId));
-            })
-            .catch((error) => {
+            } catch (error) {
                 console.error('Error:', error);
                 alert('Could not delete the note. Please try again later.'); // Notify the user
-            });
+            }
         }
     };
 

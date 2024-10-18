@@ -23,9 +23,10 @@ function Login() {
             const data = await response.json();
 
             if (response.ok) {
-                const userId = data.id; // Adjust according to your response structure
-                localStorage.setItem('userId', userId);
+                localStorage.setItem('userId', data.user_id); // Adjust according to your response structure
                 setIsSubmitted(true);
+                // Redirect to the Dashboard after successful login
+                window.location.href = '/dashboard'; // Add this line
             } else {
                 alert(data.message || 'Login failed. Check your credentials.');
             }

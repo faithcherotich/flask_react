@@ -1,9 +1,9 @@
-from flask import Flask, request, session, redirect, url_for, jsonify
+from flask import Flask, request, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_restful import Api, Resource
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, Note ,Contact
+from models import db, User, Note, Contact
 from spellchecker import SpellChecker
 from flask_migrate import Migrate
 
@@ -16,13 +16,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 spell = SpellChecker()
 api = Api(app)
-
 migrate = Migrate(app, db)
-
 
 with app.app_context():
     db.create_all()
-
 
 class UserResource(Resource):
     def post(self):
@@ -30,25 +27,25 @@ class UserResource(Resource):
         new_user = User(email=data['email'], password=generate_password_hash(data['password']))
         db.session.add(new_user)
         db.session.commit()
-        return {'message': 'User is  created successfully!'}, 201
-
+        return {'message': 'User created successfully!'}, 201
 
 class LoginResource(Resource):
     def post(self):
         data = request.get_json()
         user = User.query.filter_by(email=data['email']).first()
-        if user and check_password_hash(user.password, data['password']):
-            session['user_id'] = user.id  # to store user id in session
-            return {'message': 'Login successful!'}, 200
-        return {'message': 'Invalid credentials!'}, 401
-
+        if user:
+            if check_password_hash(user.password, data['password']):
+                session['user_id'] = user.id  # Store user ID in session
+                return {'message': 'Login successful!'}, 200
+            else:
+                return {'message': 'Invalid password!'}, 401
+        return {'message': 'User not found!'}, 401
 
 class LogoutResource(Resource):
     def post(self):
-        session.pop('user_id', None)  # remove user id in session
+        session.pop('user_id', None)  # Remove user ID from session
         return {'message': 'Logout successful!'}, 200
 
-# Note CRUD Resource
 class NoteResource(Resource):
     def get(self):
         if 'user_id' not in session:
@@ -61,12 +58,9 @@ class NoteResource(Resource):
             return {'message': 'Unauthorized'}, 401
         
         data = request.get_json()
-        
-       
-        
         spelling_errors = check_spelling(data['content'])
         if spelling_errors:
-            return {'message': 'Spelling mistakes found try again', 'errors': spelling_errors}, 400
+            return {'message': 'Spelling mistakes found. Try again.', 'errors': spelling_errors}, 400
         
         new_note = Note(
             title=data['title'],
@@ -108,7 +102,7 @@ class ContactResource(Resource):
         new_contact = Contact(
             name=data['name'],
             email=data['email'],
-            subject=data.get('subject', ''),  # Corrected this line
+            subject=data.get('subject', ''),
             message=data['message']
         )
         db.session.add(new_contact)
@@ -116,14 +110,13 @@ class ContactResource(Resource):
         return {'message': 'Contact message sent successfully!'}, 201
     
     def get(self):
-        contacts = Contact.query.all()  # Fixed variable name
+        contacts = Contact.query.all()
         return [{'id': contact.id, 'name': contact.name, 'email': contact.email, 'subject': contact.subject, 'message': contact.message} for contact in contacts], 200
-    
 
 api.add_resource(UserResource, '/signup')
 api.add_resource(LoginResource, '/login')
 api.add_resource(LogoutResource, '/logout')
-api.add_resource(NoteResource, '/notes', '/notes/<int:note_id>')  # Adding support for note ID
+api.add_resource(NoteResource, '/notes', '/notes/<int:note_id>')
 api.add_resource(ContactResource, '/contact')
 
 def check_spelling(text):

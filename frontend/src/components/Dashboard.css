@@ -1,0 +1,19 @@
+.dashboard-container {
+    padding: 20px;
+    text-align: center;
+}
+
+.dashboard-container h1 {
+    margin-bottom: 20px;
+}
+
+.dashboard-container p {
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+.dashboard-container button {
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+}

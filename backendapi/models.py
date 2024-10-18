@@ -14,7 +14,7 @@ class Note(db.Model):
     title = db.Column(db.String, nullable=False)
     content = db.Column(db.Text, nullable=False)
     tags = db.Column(db.String(200), nullable=True)
-    
+    date = db.Column(db.String, nullable= True)
     # Change 'user.id' to 'users.id' to match the User model's table name
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
