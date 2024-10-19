@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.secret_key = 'my_secret_key'
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://group_five:12345@localhost/note_taking'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -31,16 +31,16 @@ class UserResource(Resource):
 
 class LoginResource(Resource):
     def post(self):
-        data = request.get_json()
-        user = User.query.filter_by(email=data['email']).first()
-        if user:
-            if check_password_hash(user.password, data['password']):
-                session['user_id'] = user.id  # Store user ID in session
+        try:
+            data = request.get_json()
+            user = User.query.filter_by(email=data['email']).first()
+            if user and check_password_hash(user.password, data['password']):
+                session['user_id'] = user.id
                 return {'message': 'Login successful!'}, 200
-            else:
-                return {'message': 'Invalid password!'}, 401
-        return {'message': 'User not found!'}, 401
-
+            return {'message': 'Invalid email or password!'}, 401
+        except Exception as e:
+            print(f"Error: {e}")  # Log the error
+            return {'message': 'Internal Server Error'}, 500
 class LogoutResource(Resource):
     def post(self):
         session.pop('user_id', None)  # Remove user ID from session
@@ -49,53 +49,64 @@ class LogoutResource(Resource):
 class NoteResource(Resource):
     def get(self):
         if 'user_id' not in session:
-            return {'message': 'Unauthorized'}, 401
+            return jsonify({'message': 'Unauthorized'}), 401
+
         notes = Note.query.filter_by(user_id=session['user_id']).all()
-        return [{'id': note.id, 'title': note.title, 'content': note.content, 'tags': note.tags} for note in notes], 200
+        notes_data = [{'id': note.id, 'title': note.title, 'content': note.content, 'tags': note.tags} for note in notes]
+        return jsonify(notes_data), 200
 
     def post(self):
         if 'user_id' not in session:
-            return {'message': 'Unauthorized'}, 401
+            return jsonify({'message': 'Unauthorized'}), 401
         
         data = request.get_json()
+        if not data or 'title' not in data or 'content' not in data:
+            return jsonify({'message': 'Title and content are required'}), 400
+
         spelling_errors = check_spelling(data['content'])
         if spelling_errors:
-            return {'message': 'Spelling mistakes found. Try again.', 'errors': spelling_errors}, 400
+            return jsonify({'message': 'Spelling mistakes found. Try again.', 'errors': spelling_errors}), 400
         
-        new_note = Note(
-            title=data['title'],
-            content=data['content'],
-            tags=data.get('tags'),
-            user_id=session['user_id']
-        )
-        db.session.add(new_note)
-        db.session.commit()
-        return {'message': 'Note created successfully!', 'note': {'id': new_note.id, 'title': new_note.title}}, 201
+        try:
+            new_note = Note(
+                title=data['title'],
+                content=data['content'],
+                tags=data.get('tags', []),
+                user_id=session['user_id']
+            )
+            db.session.add(new_note)
+            db.session.commit()
+            return jsonify({'message': 'Note created successfully!', 'note': {'id': new_note.id, 'title': new_note.title}}), 201
+        except Exception as e:
+            print(f"Error creating note: {e}")  # Log the error for debugging
+            return jsonify({'message': 'Internal Server Error'}), 500
 
     def put(self, note_id):
         if 'user_id' not in session:
-            return {'message': 'Unauthorized'}, 401
+            return jsonify({'message': 'Unauthorized'}), 401
+
         note = Note.query.filter_by(id=note_id, user_id=session['user_id']).first()
         if not note:
-            return {'message': 'Note not found or access denied'}, 404
+            return jsonify({'message': 'Note not found or access denied'}), 404
 
         data = request.get_json()
         note.title = data['title']
         note.content = data['content']
         note.tags = data.get('tags')
         db.session.commit()
-        return {'message': 'Note updated successfully!'}, 200
+        return jsonify({'message': 'Note updated successfully!'}), 200
 
     def delete(self, note_id):
         if 'user_id' not in session:
-            return {'message': 'Unauthorized'}, 401
+            return jsonify({'message': 'Unauthorized'}), 401
+
         note = Note.query.filter_by(id=note_id, user_id=session['user_id']).first()
         if not note:
-            return {'message': 'Note not found or access denied'}, 404
+            return jsonify({'message': 'Note not found or access denied'}), 404
+
         db.session.delete(note)
         db.session.commit()
-        return {'message': 'Note deleted successfully!'}, 200
-    
+        return jsonify({'message': 'Note deleted successfully!'}), 200
 class ContactResource(Resource):
     def post(self):
         data = request.get_json()
@@ -111,7 +122,13 @@ class ContactResource(Resource):
     
     def get(self):
         contacts = Contact.query.all()
-        return [{'id': contact.id, 'name': contact.name, 'email': contact.email, 'subject': contact.subject, 'message': contact.message} for contact in contacts], 200
+        return jsonify([{
+            'id': contact.id,
+            'name': contact.name,
+            'email': contact.email,
+            'subject': contact.subject,
+            'message': contact.message
+        } for contact in contacts]), 200
 
 api.add_resource(UserResource, '/signup')
 api.add_resource(LoginResource, '/login')
@@ -125,3 +142,4 @@ def check_spelling(text):
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
+

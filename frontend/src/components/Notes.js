@@ -18,7 +18,6 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
     const [showNotes, setShowNotes] = useState(false);
     const [showEditor, setShowEditor] = useState(false);
 
-    // Fetch notes from the backend when the component mounts
     useEffect(() => {
         const fetchNotes = async () => {
             if (!isLoggedIn) {
@@ -27,7 +26,11 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
             }
     
             try {
-                const response = await fetch('http://127.0.0.1:5000/notes');
+                const response = await fetch('http://127.0.0.1:5000/notes', {
+                    method: 'GET',
+                    credentials: 'include', // Include credentials for session handling
+                });
+    
                 if (!response.ok) throw new Error('Unauthorized');
                 const data = await response.json();
                 console.log('Fetched notes:', data);
@@ -48,7 +51,6 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
     
         fetchNotes();
     }, [isLoggedIn]); // Add isLoggedIn to the dependency array
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setNewNote({

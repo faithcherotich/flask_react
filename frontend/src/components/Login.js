@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './Login.css';
 
-function Login({ setIsLoggedIn }) { // Accept setIsLoggedIn as a prop
+function Login({ setIsLoggedIn }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -21,12 +23,15 @@ function Login({ setIsLoggedIn }) { // Accept setIsLoggedIn as a prop
                 body: JSON.stringify({ email, password }),
             });
             const data = await response.json();
-
+    
             if (response.ok) {
                 sessionStorage.setItem('user_id', data.user_id);
                 setIsLoggedIn(true); // Update isLoggedIn here
+    
+                await fetchNotes(); // Fetch notes after logging in
+                
                 setIsSubmitted(true);
-                window.location.href = '/dashboard';
+                navigate('/dashboard'); // Use navigate to redirect
             } else {
                 alert(data.message || 'Login failed. Check your credentials.');
             }
@@ -37,7 +42,21 @@ function Login({ setIsLoggedIn }) { // Accept setIsLoggedIn as a prop
             setIsLoading(false);
         }
     };
-
+    
+    // Define the fetchNotes function
+    const fetchNotes = async () => {
+        const response = await fetch('http://localhost:5000/notes', {
+            method: 'GET',
+            credentials: 'include', // Important for cookie-based session management
+        });
+        const data = await response.json();
+    
+        if (response.ok) {
+            // Handle successful note retrieval, e.g., updating state with notes
+        } else {
+            alert(data.message || 'Failed to fetch notes. Please log in or try again later.');
+        }
+    };
     const handleForgotPassword = async (e) => {
         e.preventDefault();
         try {

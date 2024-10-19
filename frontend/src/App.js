@@ -6,15 +6,15 @@ import Signup from './components/Signup';
 import Home from './components/Home';
 import Contact from './components/Contact';
 import Login from './components/Login';
-import './App.css';
 import Help from './components/Help';
 import Footer from './components/Footer';
 import Carousel from './components/Carousel';
 import Notes from './components/Notes';
+import PrivateRoute from './components/PrivateRoute'; // Import PrivateRoute
+import './App.css';
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [showCarousel, setShowCarousel] = useState(true);
 
     return (
         <Router>
@@ -26,10 +26,16 @@ const App = () => {
                     <Route path="/home" element={<Home />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
-                    <Route path='/dashboard' element={<Dashboard setIsLoggedIn={setIsLoggedIn} />} /> {/* Pass setIsLoggedIn here */}
-                    <Route path='/blog' element={<Notes isLoggedIn={isLoggedIn} />} />
+                    <Route 
+                        path='/dashboard' 
+                        element={<PrivateRoute element={<Dashboard setIsLoggedIn={setIsLoggedIn} />} isLoggedIn={isLoggedIn} />} 
+                    />
+                    <Route 
+                        path='/blog' 
+                        element={<PrivateRoute element={<Notes isLoggedIn={isLoggedIn} />} isLoggedIn={isLoggedIn} />} 
+                    />
                 </Routes>
-                {showCarousel && <Carousel />}
+                <Carousel /> {/* Always display the carousel */}
             </div>
             <Footer />
         </Router>
