@@ -36,27 +36,36 @@ const Dashboard = ({ setIsLoggedIn }) => {
     const handleAddNote = async (e) => {
         e.preventDefault();
         try {
+            const noteData = {
+                title,
+                content,
+                tags: tags.split(',').map(tag => tag.trim()),
+            };
+
             const response = await fetch('http://localhost:5000/notes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ title, content, tags: tags.split(',').map(tag => tag.trim()) }), // Format tags
+                body: JSON.stringify(noteData),
             });
-    
-            const data = await response.json();
-            if (response.ok) {
-                setNotes([...notes, { id: data.note.id, title, content, tags: tags.split(',').map(tag => tag.trim()) }]);
-                setTitle('');
-                setContent('');
-                setTags('');
-            } else {
-                alert(data.message || 'Failed to add note. Please try again.');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to add note. Please try again.');
             }
+
+            const data = await response.json();
+            setNotes(prevNotes => [...prevNotes, { id: data.note.id, title, content, tags: noteData.tags }]);
+            setTitle('');
+            setContent('');
+            setTags('');
         } catch (error) {
             console.error('Error adding note:', error);
             alert('An error occurred while adding the note. Please try again later.');
+        } finally {
+            fetchNotes(); // Fetch notes to ensure the list is up to date
         }
     };
 
@@ -111,6 +120,9 @@ const Dashboard = ({ setIsLoggedIn }) => {
                         <div key={note.id}>
                             <h3>{note.title}</h3>
                             <p>{note.content}</p>
+                            <p>
+                                <strong>Tags:</strong> {Array.isArray(note.tags) ? note.tags.join(', ') : note.tags}
+                            </p>
                         </div>
                     ))
                 ) : (

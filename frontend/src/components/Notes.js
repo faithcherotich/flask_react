@@ -1,62 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import './Notes.css'; // Import the CSS file for styling
-import Editor from './Editor'; // Import the Editor component
+import './Notes.css';
 
-const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
+const Notes = ({ isLoggedIn }) => {
     const [notes, setNotes] = useState([]);
     const [newNote, setNewNote] = useState({
         title: '',
         content: '',
         tags: '',
-        date: new Date().toISOString().split('T')[0], // Default date format
+        date: new Date().toISOString().split('T')[0],
     });
     const [searchQuery, setSearchQuery] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [noteIdToEdit, setNoteIdToEdit] = useState(null);
     const [showSearch, setShowSearch] = useState(false);
     const [showForm, setShowForm] = useState(false);
-    const [showNotes, setShowNotes] = useState(false);
-    const [showEditor, setShowEditor] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchNotes = async () => {
             if (!isLoggedIn) {
                 alert('Please log in to view your notes.');
-                return; // Early exit if not logged in
+                return;
             }
-    
+
+            setLoading(true);
+            setError(null);
+
             try {
-                const response = await fetch('http://127.0.0.1:5000/notes', {
+                const response = await fetch('http://localhost:5000/notes', {
                     method: 'GET',
-                    credentials: 'include', // Include credentials for session handling
+                    credentials: 'include',
                 });
-    
-                if (!response.ok) throw new Error('Unauthorized');
+
+                if (!response.ok) throw new Error('Failed to fetch notes');
                 const data = await response.json();
-                console.log('Fetched notes:', data);
-    
-                // Validate that the fetched data is an array
-                if (Array.isArray(data)) {
-                    setNotes(data);
-                } else {
-                    console.error('Expected notes to be an array, but got:', data);
-                    setNotes([]); // Fallback to an empty array
-                }
+                setNotes(data || []);
             } catch (error) {
                 console.error('Error fetching notes:', error);
-                alert('Failed to fetch notes. Please log in or try again later.');
-                setNotes([]); // Ensure notes is an empty array on error
+                setError('Failed to fetch notes. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         };
-    
+
         fetchNotes();
-    }, [isLoggedIn]); // Add isLoggedIn to the dependency array
+    }, [isLoggedIn]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setNewNote({
-            ...newNote,
+        setNewNote((prev) => ({
+            ...prev,
             [name]: value,
-        });
+        }));
     };
 
     const handleSearchChange = (e) => {
@@ -65,49 +61,56 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const apiUrl = 'http://127.0.0.1:5000/notes';
-
+        const apiUrl = 'http://localhost:5000/notes';
+    
         const noteToAdd = {
             ...newNote,
-            tags: newNote.tags.split(',').map(tag => tag.trim()), // Trim tags
+            tags: newNote.tags.split(',').map(tag => tag.trim()),
         };
-
+    
         const method = editMode ? 'PUT' : 'POST';
         const url = editMode ? `${apiUrl}/${noteIdToEdit}` : apiUrl;
-
+    
+        setLoading(true);
+        setError(null);
+    
         try {
             const response = await fetch(url, {
-                method: method,
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(noteToAdd),
             });
-
+    
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Error response:', errorData); // Log the error response
                 throw new Error(errorData.message || 'Failed to submit the note');
             }
-
+    
             const data = await response.json();
             if (editMode) {
-                // Update note in local state for edit
-                setNotes(notes.map(note => note.id === noteIdToEdit ? { ...note, ...noteToAdd } : note));
-                setEditMode(false);
-                setNoteIdToEdit(null);
+                setNotes((prev) =>
+                    prev.map(note => note.id === noteIdToEdit ? { ...note, ...noteToAdd } : note)
+                );
             } else {
-                // Add new note to local state for new note
-                setNotes([...notes, { ...noteToAdd, id: data.note.id }]);
+                setNotes((prev) => [...prev, { ...noteToAdd, id: data.note.id }]);
             }
+    
+            // Reset form fields
             setNewNote({ title: '', content: '', tags: '', date: new Date().toISOString().split('T')[0] });
+            setEditMode(false);
+            setNoteIdToEdit(null);
             setShowForm(false);
         } catch (error) {
             console.error('Error:', error);
-            alert('Could not submit the note. Please try again later.');
+            setError('Could not submit the note. Please try again later.');
+        } finally {
+            setLoading(false);
         }
     };
-
+    
     const handleEdit = (noteId) => {
         const noteToEdit = notes.find((note) => note.id === noteId);
         setNewNote({
@@ -118,27 +121,32 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
         });
         setEditMode(true);
         setNoteIdToEdit(noteId);
-        setShowForm(true); // Show the form for editing
+        setShowForm(true);
     };
 
     const handleDelete = async (noteId) => {
         if (window.confirm('Are you sure you want to delete this note?')) {
-            const apiUrl = `http://127.0.0.1:5000/notes/${noteId}`;
+            const apiUrl = `http://localhost:5000/notes/${noteId}`;
+
+            setLoading(true);
+            setError(null);
 
             try {
                 const response = await fetch(apiUrl, {
                     method: 'DELETE',
+                    credentials: 'include',
                 });
 
                 if (!response.ok) {
                     throw new Error('Failed to delete the note');
                 }
 
-                // Update the frontend state if the backend deletion was successful
-                setNotes(notes.filter((note) => note.id !== noteId));
+                setNotes((prev) => prev.filter((note) => note.id !== noteId));
             } catch (error) {
                 console.error('Error:', error);
-                alert('Could not delete the note. Please try again later.'); // Notify the user
+                setError('Could not delete the note. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         }
     };
@@ -149,20 +157,16 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
     );
 
     return (
-        <div className="blog">
-            <h1>Notes</h1>
+        <div className="notes-container">
+            <h1>Your Notes</h1>
+            {loading && <p>Loading...</p>}
+            {error && <p className="error">{error}</p>}
             <div className="button-group">
                 <button onClick={() => setShowSearch(!showSearch)}>
                     {showSearch ? 'Hide Search' : 'Show Search'}
                 </button>
                 <button onClick={() => setShowForm(!showForm)}>
                     {showForm ? (editMode ? 'Cancel Edit' : 'Hide Form') : (editMode ? 'Edit Notes' : 'Add New Notes')}
-                </button>
-                <button onClick={() => setShowNotes(!showNotes)}>
-                    {showNotes ? 'Hide Notes' : 'Show Notes'}
-                </button>
-                <button onClick={() => setShowEditor(!showEditor)}>
-                    {showEditor ? 'Hide Editor' : 'Show Editor'}
                 </button>
             </div>
             {showSearch && (
@@ -175,24 +179,26 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
                     />
                 </div>
             )}
-            {showNotes && (
-                <div className="blog-posts">
-                    {filteredNotes.map((note) => (
-                        <div key={note.id} className="blog-post">
+            <div className="notes-list">
+                {filteredNotes.length > 0 ? (
+                    filteredNotes.map((note) => (
+                        <div key={note.id} className="note">
                             <h2>{note.title}</h2>
                             <p>{note.content}</p>
                             <p><strong>Tags:</strong> {note.tags.join(', ')}</p>
                             <p><strong>Date:</strong> {new Date(note.date).toLocaleDateString()}</p>
-                            <button className="edit" onClick={() => handleEdit(note.id)}>Edit</button>
-                            <button className="delete" onClick={() => handleDelete(note.id)}>Delete</button>
+                            <button onClick={() => handleEdit(note.id)}>Edit</button>
+                            <button onClick={() => handleDelete(note.id)}>Delete</button>
                         </div>
-                    ))}
-                </div>
-            )}
+                    ))
+                ) : (
+                    <p>No notes found.</p>
+                )}
+            </div>
             {showForm && (
                 <div>
                     <h2>{editMode ? 'Edit Note' : 'Add a New Note'}</h2>
-                    <form className="blog-form" onSubmit={handleSubmit}>
+                    <form className="note-form" onSubmit={handleSubmit}>
                         <label htmlFor="title">Title:</label>
                         <input
                             type="text"
@@ -208,10 +214,9 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
                             name="content"
                             value={newNote.content}
                             onChange={handleChange}
-                            rows="5"
                             required
                         />
-                        <label htmlFor="tags">Tags (comma-separated):</label>
+                        <label htmlFor="tags">Tags:</label>
                         <input
                             type="text"
                             id="tags"
@@ -219,20 +224,10 @@ const Notes = ({ isLoggedIn }) => { // Accept isLoggedIn as a prop
                             value={newNote.tags}
                             onChange={handleChange}
                         />
-                        <label htmlFor="date">Date:</label>
-                        <input
-                            type="date"
-                            id="date"
-                            name="date"
-                            value={newNote.date}
-                            onChange={handleChange}
-                            required
-                        />
                         <button type="submit">{editMode ? 'Update Note' : 'Add Note'}</button>
                     </form>
                 </div>
             )}
-            {showEditor && <Editor />}
         </div>
     );
 };
