@@ -17,3 +17,17 @@
     font-size: 16px;
     cursor: pointer;
 }
+.add-note-button {
+    background-color: green;
+    color: white;
+}
+
+.my-notes-button {
+    background-color: blue;
+    color: white;
+}
+
+.logout-button {
+    background-color: red;
+    color: white;
+}

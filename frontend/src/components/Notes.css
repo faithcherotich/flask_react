@@ -104,3 +104,21 @@
 .blog-form button:hover {
     background-color: #0cc32e;
 }
+.edit-button {
+    background-color: green;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    margin-right: 10px; /* Optional: space between buttons */
+    border-radius: 4px; /* Optional: rounded corners */
+}
+
+.delete-button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px; /* Optional: rounded corners */
+}

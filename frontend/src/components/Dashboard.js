@@ -77,42 +77,42 @@ const Dashboard = ({ setIsLoggedIn }) => {
         <div className="dashboard-container">
             <h1>Welcome to Your Dashboard</h1>
             <form onSubmit={handleAddNote} className="add-note-form">
-                <h2>Add a Note</h2>
-                <label>
-                    Title:
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                    />
-                </label>
-                <label>
-                    Content:
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        required
-                    />
-                </label>
-                <label>
-                    Tags:
-                    <input
-                        type="text"
-                        value={tags}
-                        onChange={(e) => setTags(e.target.value)}
-                    />
-                </label>
-                <button type="submit">Add Note</button>
-            </form>
-            <div className="dashboard-buttons">
-                <Link to="/notes">
-                    <button className="dashboard-button">My Notes</button>
-                </Link>
-                <button className="dashboard-button" onClick={handleLogout}>
-                    Logout
-                </button>
-            </div>
+    <h2>Add a Note</h2>
+    <label>
+        Title:
+        <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+        />
+    </label>
+    <label>
+        Content:
+        <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+        />
+    </label>
+    <label>
+        Tags:
+        <input
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+        />
+    </label>
+    <button type="submit" className="add-note-button">Add Note</button>
+</form>
+<div className="dashboard-buttons">
+    <Link to="/notes">
+        <button className="my-notes-button">My Notes</button>
+    </Link>
+    <button className="logout-button" onClick={handleLogout}>
+        Logout
+    </button>
+</div>
             <div className="notes-list">
                 <h2>Your Notes:</h2>
                 {notes.length > 0 ? (

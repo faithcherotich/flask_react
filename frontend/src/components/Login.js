@@ -18,13 +18,13 @@ function Login({ setIsLoggedIn }) {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
-                credentials: 'include', // Important for session management
+                credentials: 'include',
                 body: JSON.stringify({ email, password }),
             });
 
             if (response.ok) {
                 setIsLoggedIn(true);
-                navigate('/dashboard'); // Redirect after successful login
+                navigate('/dashboard');
             } else {
                 const data = await response.json();
                 alert(data.message || 'Login failed. Check your credentials.');

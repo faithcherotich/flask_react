@@ -36,7 +36,7 @@ class UserResource(Resource):
         data = request.get_json()
         new_user = User(email=data['email'], password=generate_password_hash(data['password']))
         db.session.add(new_user)
-        
+
         try:
             db.session.commit()
             logging.info(f"User created: {new_user.email}")
@@ -78,13 +78,18 @@ class LogoutResource(Resource):
 
 class NoteResource(Resource):
     def get(self):
-        logging.info(f"Current session: {session}")
         if 'user_id' not in session:
             logging.warning("Unauthorized access attempt to notes.")
             return {'message': 'Unauthorized'}, 401
 
         notes = Note.query.filter_by(user_id=session['user_id']).all()
-        notes_data = [{'id': note.id, 'title': note.title, 'content': note.content, 'tags': note.tags} for note in notes]
+        notes_data = [{
+            'id': note.id,
+            'title': note.title,
+            'content': note.content,
+            'tags': note.tags.split(',') if note.tags else []  # Ensure tags are a list
+        } for note in notes]
+
         logging.info(f"User {session['user_id']} accessed their notes.")
         return notes_data, 200
 
@@ -98,7 +103,11 @@ class NoteResource(Resource):
             logging.warning("Title or content missing in request data for note creation.")
             return {'message': 'Title and content are required'}, 400
 
-        # Check for spelling errors
+        tags = data.get('tags', [])
+        if not isinstance(tags, list):
+            logging.warning("Tags should be a list.")
+            return {'message': 'Tags should be a list.'}, 400
+
         spelling_errors = check_spelling(data['content'])
         if spelling_errors:
             logging.info(f"Spelling mistakes found: {spelling_errors}")
@@ -108,7 +117,7 @@ class NoteResource(Resource):
             new_note = Note(
                 title=data['title'],
                 content=data['content'],
-                tags=data.get('tags', []),
+                tags=','.join(tag.strip() for tag in tags),  # Join list into string for storage
                 user_id=session['user_id']
             )
             db.session.add(new_note)
@@ -116,7 +125,7 @@ class NoteResource(Resource):
             logging.info(f"Note created successfully: {new_note.id}")
             return {'message': 'Note created successfully!', 'note': {'id': new_note.id, 'title': new_note.title}}, 201
         except Exception as e:
-            db.session.rollback()  # Rollback in case of error
+            db.session.rollback()
             logging.error(f"Error creating note: {e}", exc_info=True)
             return {'message': 'Internal Server Error'}, 500
 
@@ -135,16 +144,21 @@ class NoteResource(Resource):
             logging.warning("Title or content missing in request data for note update.")
             return {'message': 'Title and content are required'}, 400
         
+        tags = data.get('tags', [])
+        if not isinstance(tags, list):
+            logging.warning("Tags should be a list.")
+            return {'message': 'Tags should be a list.'}, 400
+
         note.title = data['title']
         note.content = data['content']
-        note.tags = data.get('tags', note.tags)
+        note.tags = ','.join(tag.strip() for tag in tags)  # Update tags correctly
 
         try:
             db.session.commit()
             logging.info(f"Note updated successfully: {note_id}")
             return {'message': 'Note updated successfully!'}, 200
         except Exception as e:
-            db.session.rollback()  # Rollback in case of error
+            db.session.rollback()
             logging.error(f"Error updating note: {e}", exc_info=True)
             return {'message': 'Internal Server Error'}, 500
 
@@ -164,10 +178,9 @@ class NoteResource(Resource):
             logging.info(f"Note deleted successfully: {note_id}")
             return {'message': 'Note deleted successfully!'}, 200
         except Exception as e:
-            db.session.rollback()  # Rollback in case of error
+            db.session.rollback()
             logging.error(f"Error deleting note: {e}", exc_info=True)
             return {'message': 'Internal Server Error'}, 500
-
 class ContactResource(Resource):
     def post(self):
         data = request.get_json()

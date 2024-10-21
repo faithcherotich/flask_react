@@ -62,18 +62,18 @@ const Notes = ({ isLoggedIn }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const apiUrl = 'http://localhost:5000/notes';
-    
+
         const noteToAdd = {
             ...newNote,
             tags: newNote.tags.split(',').map(tag => tag.trim()),
         };
-    
+
         const method = editMode ? 'PUT' : 'POST';
         const url = editMode ? `${apiUrl}/${noteIdToEdit}` : apiUrl;
-    
+
         setLoading(true);
         setError(null);
-    
+
         try {
             const response = await fetch(url, {
                 method,
@@ -83,12 +83,12 @@ const Notes = ({ isLoggedIn }) => {
                 credentials: 'include',
                 body: JSON.stringify(noteToAdd),
             });
-    
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Failed to submit the note');
             }
-    
+
             const data = await response.json();
             if (editMode) {
                 setNotes((prev) =>
@@ -97,7 +97,7 @@ const Notes = ({ isLoggedIn }) => {
             } else {
                 setNotes((prev) => [...prev, { ...noteToAdd, id: data.note.id }]);
             }
-    
+
             // Reset form fields
             setNewNote({ title: '', content: '', tags: '', date: new Date().toISOString().split('T')[0] });
             setEditMode(false);
@@ -110,20 +110,19 @@ const Notes = ({ isLoggedIn }) => {
             setLoading(false);
         }
     };
-    
+
     const handleEdit = (noteId) => {
         const noteToEdit = notes.find((note) => note.id === noteId);
         setNewNote({
             title: noteToEdit.title,
             content: noteToEdit.content,
-            tags: noteToEdit.tags.join(','),
+            tags: Array.isArray(noteToEdit.tags) ? noteToEdit.tags.join(',') : noteToEdit.tags, // Ensure tags are a string
             date: noteToEdit.date,
         });
         setEditMode(true);
         setNoteIdToEdit(noteId);
         setShowForm(true);
     };
-
     const handleDelete = async (noteId) => {
         if (window.confirm('Are you sure you want to delete this note?')) {
             const apiUrl = `http://localhost:5000/notes/${noteId}`;
@@ -180,19 +179,19 @@ const Notes = ({ isLoggedIn }) => {
                 </div>
             )}
             <div className="notes-list">
-                {filteredNotes.length > 0 ? (
-                    filteredNotes.map((note) => (
-                        <div key={note.id} className="note">
-                            <h2>{note.title}</h2>
-                            <p>{note.content}</p>
-                            <p><strong>Tags:</strong> {note.tags.join(', ')}</p>
-                            <p><strong>Date:</strong> {new Date(note.date).toLocaleDateString()}</p>
-                            <button onClick={() => handleEdit(note.id)}>Edit</button>
-                            <button onClick={() => handleDelete(note.id)}>Delete</button>
-                        </div>
-                    ))
-                ) : (
-                    <p>No notes found.</p>
+            {filteredNotes.length > 0 ? (
+    filteredNotes.map((note) => (
+        <div key={note.id} className="note">
+            <h2>{note.title}</h2>
+            <p>{note.content}</p>
+            <p><strong>Tags:</strong> {Array.isArray(note.tags) ? note.tags.join(', ') : note.tags}</p>
+            <p><strong>Date:</strong> {new Date(note.date).toLocaleDateString()}</p>
+            <button className="edit-button" onClick={() => handleEdit(note.id)}>Edit</button>
+            <button className="delete-button" onClick={() => handleDelete(note.id)}>Delete</button>
+        </div>
+    ))
+) : (
+    <p>No notes found.</p>
                 )}
             </div>
             {showForm && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // Ensure useState is imported
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -10,7 +10,7 @@ import Help from './components/Help';
 import Footer from './components/Footer';
 import Carousel from './components/Carousel';
 import Notes from './components/Notes';
-import PrivateRoute from './components/PrivateRoute'; // Import PrivateRoute
+import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
 const App = () => {
@@ -18,10 +18,10 @@ const App = () => {
 
     return (
         <Router>
-            {!isLoggedIn && <Header />} {/* Show header only if not logged in */}
+            {isLoggedIn && <Header />} {/* Show header only if logged in */}
             <div className="app-container">
                 <Routes>
-                    <Route path='/Help' element={<Help />} />
+                    <Route path='/help' element={<Help />} />
                     <Route path='/contact' element={<Contact />} />
                     <Route path="/home" element={<Home />} />
                     <Route path="/signup" element={<Signup />} />
@@ -31,7 +31,7 @@ const App = () => {
                         element={<PrivateRoute element={<Dashboard setIsLoggedIn={setIsLoggedIn} />} isLoggedIn={isLoggedIn} />} 
                     />
                     <Route 
-                        path='/blog' 
+                        path='/notes' // Changed from /blog to /notes
                         element={<PrivateRoute element={<Notes isLoggedIn={isLoggedIn} />} isLoggedIn={isLoggedIn} />} 
                     />
                 </Routes>
