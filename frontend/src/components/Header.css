@@ -67,4 +67,19 @@
   .dark-mode .mode-toggle {
     color: #f4f4f4;
   }
-  
+  /* Global styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  transition: background-color 0.3s, color 0.3s; /* Smooth transitions */
+}
+
+/* Dark Mode Styles */
+.dark-mode {
+  background-color: #121212; /* Dark background for the entire app */
+  color: #e0e0e0; /* Light text color */
+}
+
+.dark-mode .header {
+  background-color: #333; /* Dark background for header in dark mode */
+}
