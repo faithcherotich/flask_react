@@ -1,17 +1,17 @@
 [build]
-  # Install pipenv and then install Python dependencies, followed by npm dependencies, and finally run the build command
-  command = "pip install --user pipenv && pipenv install && npm install && npm run build"
+  # Install Python dependencies directly using requirements.txt
+  command = "pip install -r requirements.txt && npm install && npm run build"
   
   # Specify the directory that contains the final build (React usually outputs to the "build" folder)
   publish = "build"
 
 [build.environment]
   # Define the Python version required by your project
-  PYTHON_VERSION = "3.9"
+  PYTHON_VERSION = "3.9"  # or your project's required version
   
   # Define the Node.js version required by your project
-  NODE_VERSION = "16"
+  NODE_VERSION = "16"      # or your project's required version
 
 [build.lifecycle]
-  # This section allows running tasks during the build lifecycle
-  onBuild = "pip install --user pipenv && pipenv install"
+  # This section is optional; typically, the main command in [build] suffices
+  onBuild = "echo 'Running custom build commands...'"  # Optional
