@@ -1,6 +1,6 @@
 [build]
   command = "pip install -r backendapi/requirements.txt && npm install && npm run build"
-  publish = "build"  # Specify the directory that contains the final build
+  publish = "frontend/build"   # Specify the directory that contains the final build
 
 [build.environment]
   PYTHON_VERSION = "3.9"  # or your project's required version
