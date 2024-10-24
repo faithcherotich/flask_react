@@ -1,0 +1,9 @@
+[build]
+  command = "pipenv install && npm install && npm run build"
+  publish = "build"
+
+[build.environment]
+  PYTHON_VERSION = "3.9"  # or the version your project requires
+
+[build.lifecycle]
+  onBuild = "pip install pipenv && pipenv install"
