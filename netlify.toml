@@ -1,5 +1,5 @@
 [build]
-  command = "pip install -r backend/requirements.txt && npm install && npm run build"
+  command = "pip install -r backendapi/requirements.txt && npm install && npm run build"
   publish = "build"  # Specify the directory that contains the final build
 
 [build.environment]
