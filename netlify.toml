@@ -1,6 +1,6 @@
 [build]
-  # Install Python dependencies directly using requirements.txt
-  command = "pip install -r requirements.txt && npm install && npm run build"
+  command = "pip install -r backend/requirements.txt && npm install && npm run build"
+  publish = "build"
   
   # Specify the directory that contains the final build (React usually outputs to the "build" folder)
   publish = "build"
