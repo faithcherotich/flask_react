@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 app.secret_key = 'my_secret_key'
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3001"}})
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://group_five:12345@localhost/note_taking'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
